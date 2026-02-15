@@ -8,6 +8,8 @@ import (
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
+
+	"encoding/json"
 )
 
 func main() {
@@ -71,5 +73,22 @@ func main() {
 	fmt.Fprintln(os.Stderr, "Logs from your program will appear here!")
 
 	// TODO: Uncomment the line below to pass the first stage
+	if len(resp.Choices[0].Message.ToolCalls) > 0 {
+		toolCall := resp.Choices[0].Message.ToolCalls[0]
+		if toolCall.Function.Name == "Read" {
+			var args struct {
+				FilePath string `json:"file_path"`
+			}
+			json.Unmarshal([]byte(toolCall.Function.Arguments), &args)
+
+			content, err := os.ReadFile(args.FilePath)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "error reading file: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Print(string(content))
+		}
+	}else{
 	 fmt.Print(resp.Choices[0].Message.Content)
+	}
 }
